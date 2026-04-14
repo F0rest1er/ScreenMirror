@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трансляция Экрана</title>
+    <link rel="stylesheet" href="/desktop_assets/style.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="app-page">
+    <div class="app-container app-container--glass">
+        <header class="app-header">
+            <h1 class="app-header__title">Трансляция <span class="app-header__highlight">Экрана</span></h1>
+            <p class="app-header__subtitle">Отсканируйте код для просмотра на устройстве</p>
+        </header>
+
+        <main class="app-main">
+            <div class="qr-box">
+                <div class="qr-box__frame">
+                    <picture class="qr-box__picture">
+                        
+                        <img id="qrImage" class="qr-box__image" src="/api/qr" alt="QR-код для подключения">
+                    </picture>
+                </div>
+                <div class="qr-box__glow"></div>
+            </div>
+
+            <div class="display-selector" id="displaySelector"></div>
+
+            <div class="status-panel">
+                <div class="status-panel__indicator status-panel__indicator--active"></div>
+                <div class="status-panel__text">Сервер запущен. Ожидание подключения.</div>
+                <div class="status-panel__url" id="serverUrl">...</div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/desktop_assets/script.js?v=1"></script>
+</body>
+</html>
