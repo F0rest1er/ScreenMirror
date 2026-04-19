@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"os"
 
@@ -28,7 +29,19 @@ func main() {
 	}
 	serverUrl := fmt.Sprintf("http://%s:%s/mobile/", ip, port)
 
+	authManager := utils.NewAuthManager()
 	videoStreamer := stream.NewStreamer()
+
+	requireAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie("session_token")
+			if err != nil || !authManager.IsValidSession(cookie.Value) {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 
 	mux := http.NewServeMux()
 
@@ -50,7 +63,7 @@ func main() {
 	}))
 	mux.Handle("/desktop_assets/", http.StripPrefix("/desktop_assets/", http.FileServer(http.FS(uiFS))))
 
-	mux.Handle("/stream", videoStreamer)
+	mux.Handle("/stream", requireAuth(videoStreamer))
 
 	mux.HandleFunc("/api/qr", func(w http.ResponseWriter, r *http.Request) {
 		png, err := qrcode.Encode(serverUrl, qrcode.Medium, 256)
@@ -65,8 +78,45 @@ func main() {
 	mux.HandleFunc("/api/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
-			"url": serverUrl,
+			"url":      serverUrl,
+			"password": authManager.Password,
 		})
+	})
+
+	mux.HandleFunc("/api/auth/challenge", func(w http.ResponseWriter, r *http.Request) {
+		nonce := authManager.GetChallenge()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"nonce": nonce})
+	})
+
+	mux.HandleFunc("/api/auth/verify", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Nonce string `json:"nonce"`
+			Hash  string `json:"hash"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		host := r.RemoteAddr
+		if h, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+			host = h
+		}
+
+		if authManager.Verify(host, req.Nonce, req.Hash) {
+			token := authManager.CreateSession()
+			http.SetCookie(w, &http.Cookie{
+				Name:     "session_token",
+				Value:    token,
+				Path:     "/",
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			})
+			w.WriteHeader(http.StatusOK)
+		} else {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
 	})
 
 	mux.HandleFunc("/api/displays", func(w http.ResponseWriter, r *http.Request) {

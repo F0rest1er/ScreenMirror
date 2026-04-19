@@ -6,6 +6,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (urlEl && data.url) {
         urlEl.textContent = data.url;
       }
+      
+      const passEl = document.getElementById("authPassword");
+      const passBlock = document.getElementById("authPasswordBlock");
+      if (passEl && passBlock && data.password) {
+        passEl.textContent = data.password;
+        passBlock.style.display = "block";
+      }
     })
     .catch((err) => console.error("Error fetching info:", err));
 

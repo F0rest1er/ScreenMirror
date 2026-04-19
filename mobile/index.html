@@ -19,14 +19,22 @@
                 </svg>
             </button>
         </header>
-        <main class="viewer-content">
+        <main class="viewer-content" id="viewerContent" style="display: none;">
             <div class="viewer-content__stream-box">
                 <picture class="viewer-content__picture">
-                    <img class="viewer-content__video" src="/stream" alt="Трансляция экрана">
+                    <img class="viewer-content__video" id="streamVideo" alt="Трансляция экрана">
                 </picture>
             </div>
-            <div class="viewer-content__loader">Ожидание потока...</div>
+            <div class="viewer-content__loader" id="streamLoader">Ожидание потока...</div>
         </main>
+
+        <div class="login-form" id="loginForm">
+            <h2 class="login-form__title">Авторизация</h2>
+            <p class="login-form__desc">Пароль указан на экране вашего Mac</p>
+            <input type="text" class="login-form__input" id="passwordInput" placeholder="Пароль" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button class="login-form__btn" id="loginBtn">Подключиться</button>
+            <div class="login-form__error" id="loginError"></div>
+        </div>
     </div>
     <script src="/mobile/script.js"></script>
 </body>
