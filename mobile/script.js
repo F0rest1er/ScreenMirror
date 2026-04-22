@@ -43,6 +43,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const noSleep = new NoSleep();
+  const cursorEl = document.getElementById("customCursor");
+  let pc = null;
+  if (typeof PerfectCursor !== "undefined") {
+    pc = new PerfectCursor.PerfectCursor((point) => {
+      cursorEl.style.transform = `translate(${point[0]}px, ${point[1]}px)`;
+    });
+  }
+
+  function startCursorStream() {
+    cursorEl.style.display = "block";
+    const evtSource = new EventSource("/api/cursor");
+    evtSource.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      const rect = streamVideo.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0 || data.w === 0 || data.h === 0) return;
+      
+      const scaleX = rect.width / data.w;
+      const scaleY = rect.height / data.h;
+      
+      let x = rect.left + data.x * scaleX;
+      let y = rect.top + data.y * scaleY;
+      
+      if (x < rect.left) x = rect.left;
+      if (x > rect.right) x = rect.right;
+      if (y < rect.top) y = rect.top;
+      if (y > rect.bottom) y = rect.bottom;
+
+      if (pc) {
+        pc.addPoint([x, y]);
+      } else {
+        cursorEl.style.transform = `translate(${x}px, ${y}px)`;
+      }
+    };
+  }
+
   async function sha256(message) {
     const K = [
       0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
@@ -146,17 +182,28 @@ document.addEventListener("DOMContentLoaded", () => {
         loginForm.style.display = "none";
         viewerContent.style.display = "flex";
         streamVideo.src = "/stream";
+        startCursorStream();
       } else {
         loginError.textContent = "Неверный пароль или вы заблокированы";
         passwordInput.value = "";
       }
     } catch (err) {
       loginError.textContent = "Ошибка сети";
-      console.error(err);
     } finally {
       loginBtn.disabled = false;
     }
   }
+
+  document.addEventListener("click", function enableNoSleep() {
+    document.removeEventListener("click", enableNoSleep, false);
+    noSleep.enable();
+  }, false);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && viewerContent.style.display === "flex") {
+      noSleep.enable();
+    }
+  });
 
   loginBtn.addEventListener("click", performLogin);
   passwordInput.addEventListener("keypress", (e) => {

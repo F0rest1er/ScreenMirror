@@ -3,6 +3,7 @@ package stream
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"log"
 	"net/http"
@@ -52,6 +53,16 @@ func (s *Streamer) GetDisplay() int {
 	return s.displayIndex
 }
 
+func (s *Streamer) GetIndexAndBounds() (int, image.Rectangle) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	idx := s.displayIndex
+	if idx >= screenshot.NumActiveDisplays() {
+		idx = 0
+	}
+	return idx, screenshot.GetDisplayBounds(idx)
+}
+
 func (s *Streamer) captureLoop() {
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
@@ -62,6 +73,13 @@ func (s *Streamer) captureLoop() {
 		s.mutex.Unlock()
 
 		if clientCount == 0 {
+			continue
+		}
+
+		if !HasScreenCaptureAccess() {
+			log.Println("Ожидание прав на запись экрана...")
+			RequestScreenCaptureAccess()
+			time.Sleep(5 * time.Second)
 			continue
 		}
 
@@ -76,7 +94,8 @@ func (s *Streamer) captureLoop() {
 		bounds := screenshot.GetDisplayBounds(idx)
 		img, err := screenshot.CaptureRect(bounds)
 		if err != nil {
-			log.Printf("ОШИБКА: Не удалось захватить экран. Проверьте, выданы ли приложению права на Запись экрана (Screen Recording) в настройках приватности macOS: %v", err)
+			log.Printf("ОШИБКА: Не удалось захватить экран. Проверьте, выданы ли приложению права: %v", err)
+			time.Sleep(2 * time.Second)
 			continue
 		}
 

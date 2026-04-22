@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/kbinani/screenshot"
 	"github.com/skip2/go-qrcode"
@@ -127,6 +128,37 @@ func main() {
 			"current": videoStreamer.GetDisplay(),
 		})
 	})
+
+	mux.Handle("/api/cursor", requireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			return
+		}
+
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			default:
+				cx, cy := stream.GetCursorPos()
+				_, bounds := videoStreamer.GetIndexAndBounds()
+				
+				wPx := float64(bounds.Dx())
+				hPx := float64(bounds.Dy())
+				
+				relX := cx - float64(bounds.Min.X)
+				relY := cy - float64(bounds.Min.Y)
+				
+				fmt.Fprintf(w, "data: {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}\n\n", relX, relY, wPx, hPx)
+				flusher.Flush()
+				time.Sleep(33 * time.Millisecond)
+			}
+		}
+	})))
 
 	mux.HandleFunc("/api/set_display", func(w http.ResponseWriter, r *http.Request) {
 		idxStr := r.URL.Query().Get("id")

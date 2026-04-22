@@ -27,7 +27,7 @@ func NewAuthManager() *AuthManager {
 }
 
 func generatePassword() string {
-	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const chars = "abcdefghjkmnopqrstuvwxyzABCDEFGHJKMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 8)
 	for i := range b {
 		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))

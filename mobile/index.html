@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body class="viewer-page">
+    <div class="cursor-pointer" id="customCursor" style="display: none;"></div>
     <div class="viewer-layout">
         <header class="viewer-header">
             <h1 class="viewer-header__title">Трансляция macOS</h1>
@@ -36,6 +37,8 @@
             <div class="login-form__error" id="loginError"></div>
         </div>
     </div>
+    <script src="https://unpkg.com/perfect-cursor/dist/perfect-cursor.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <script src="/mobile/script.js"></script>
 </body>
 </html>
